@@ -70,18 +70,25 @@ body {
 }
 
 #player {
-    background-color: rgb(128,128,128);
+
      position:fixed;
         top:0;
         right:0px;
+       overflow: scroll;
+       height:100%;
+       text-align: justify;
+       padding: 10px;
 }
 
 #player img {
-width: 100%;
+    height: 320px;
+    max-height: 320px;
+    max-width: 100%;
 }
 #player video {
-max-width: 100%;
-max-height: 50%;
+    height: 640px;
+    max-height: 640px;
+    max-width: 100%;
 }
 @keyframes animate-pop {
   0% {
@@ -122,20 +129,87 @@ max-height: 50%;
 
 .button-success {
  background: rgb(28, 184, 65);
- /* this is a green */
 }
 
 .button-error {
  background: rgb(202, 60, 60);
- /* this is a maroon */
 }
 
 .button-warning {
  background: rgb(223, 117, 20);
- /* this is an orange */
 }
 
 .button-secondary {
  background: rgb(66, 184, 221);
- /* this is a light blue */
 }
+
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 110px;
+  height: 34px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+summary {
+    font-weight:bolder;
+    padding: 10px;
+    font-size : 1.4em;
+}
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+  vertical-align: middle;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 72px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+ .slider:before {
+     content: 'Stopped';
+     color: black;
+ }
+ input:checked + .slider:before {
+     content: 'Running';
+     color: black;
+ }
+
+ .rule {
+    font-weight :  bolder;
+ }

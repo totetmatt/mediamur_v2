@@ -1,0 +1,6 @@
+application.conf
+conf/application.conf
+target/
+.bsp/
+.idea/
+img/

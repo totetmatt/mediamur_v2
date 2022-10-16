@@ -17,7 +17,8 @@ class MediaWall {
             media = new MediamurMedia(data['id'],
                                     data['kind'],
                                     data['preview_url'],
-                                    data['url']);
+                                    data['url'],
+                                    data['hit']);
            const player = this.player;
            media.node.onclick = function(e) {
                    player.innerHTML = "";
@@ -33,6 +34,8 @@ class MediaWall {
                         video.muted=true;
                         video.autoplay=true;
                         video.controls=true;
+                        video.height=320;
+
                         const source = document.createElement("source");
                         source.src= media.url;
                         source.type = "video/mp4";
@@ -40,33 +43,42 @@ class MediaWall {
                          video.append(source);
                          player.append(video);
                    }
+                   fetch(`tweet/${media.id}`)
+                     .then((response) => response.json())
+                     .then((data) => {
+                            const tweetsHtml = document.createElement("ul");
+                            for(let idx in data){
+                              const tweet = data[idx];
+                              const text = tweet[0];
+                              const users = tweet[1];
+                              const nb_users = users.length;
+                              let tweetUser = {};
+
+                              const tweetHtml =  document.createElement("li");
+                              tweetHtml.textContent = `${nb_users} : ${text}`;
+                              tweetsHtml.append(tweetHtml);
+                            }
+                            player.append(tweetsHtml);
+
+                     })
             }
            this.medias[data["id"]] = media;
 
-        }
-        let old_count = this.counts[media.id];
-        let new_count = 1;
-        if(old_count === undefined){
-            new_count = 1;
         } else {
-            new_count = old_count + 1 ;
-        }
-        this.counts[media.id] = new_count;
 
-        let old_stack = this.stacks[old_count];
-        let new_stack = this.stacks[new_count];
+            let old_stack = this.stacks[media.hit];
+            if(old_stack !== undefined){
+                old_stack.remove_media(media);
+            }
+            media.hit = data['hit']
+        }
+        let new_stack = this.stacks[media.hit];
         if(new_stack === undefined) {
-            this.stacks[new_count] = new WallStack(new_count,this.node);
-            new_stack = this.stacks[new_count];
+            this.stacks[media.hit] = new WallStack(media.hit,this.node);
+            new_stack = this.stacks[media.hit];
         }
-
-        if(old_stack !== undefined){
-            old_stack.remove_media(media);
-        }
-
         new_stack.offer_media(media);
     }
-
 }
 
 class WallStack {
@@ -85,6 +97,7 @@ class WallStack {
         this.list = {};
 
         this.root = document.createElement('div');
+        this.root.id = `wall-stack-${this.id}`;
         this.root.className = this.className();
 
         const label_div = document.createElement("div");
@@ -93,15 +106,23 @@ class WallStack {
         this.root.append(label_div);
 
         this.node = document.createElement("div");
+
         this.node.className = "pure-u-23-24 wall-stack-media";
         this.root.append(this.node);
-
-        parent.insertBefore(this.root, parent.firstChild);
+        let stackUnder = null;
+        for(let i=(id-1);i>0;i--){
+            let t = document.getElementById(`wall-stack-${i}`);
+            if(t!==null) {
+                stackUnder = t;
+                break;
+            }
+        }
+        parent.insertBefore(this.root, stackUnder);
     };
 
     remove_media(media:MediamurMedia){
         delete this.list[media.id];
-        this.node.removeChild(media.node);
+        //this.node.removeChild(media.node);
         if(Object.keys(this.list).length <= 0) {
              this.root.className="invisible";
         }
@@ -121,17 +142,17 @@ class MediamurMedia {
     kind: string;
     preview_url: string;
     url: string;
-
+    hit: number;
     node: HTMLImageElement;
-    constructor(id :string, kind:string, preview_url:string, url:string) {
+    constructor(id :string, kind:string, preview_url:string, url:string, hit:number) {
         this.id = id;
         this.kind = kind,
         this.preview_url = preview_url;
         this.url = url;
-
+        this.hit = hit;
         this.node = document.createElement("img");
         this.node.className = this.kind;
-
+        this.node.id = `media_${id}`
         this.node.src = this.preview_url;
 
     };
@@ -141,7 +162,8 @@ class MediamurMedia {
             json_data['id'],
             json_data['kind'],
             json_data['preview_url'],
-            json_data['url']
+            json_data['url'],
+            json_data['hit']
         )
     };
 }
@@ -149,6 +171,21 @@ class MediamurMedia {
 
 
 (function() {
+    const streamStartStopToggle = document.getElementById("streamStartStopToggle") as HTMLInputElement
+    streamStartStopToggle.onchange = function () {
+     let url = streamStartStopToggle.checked ? "/stream/start":"/stream/stop";
+
+             fetch(url, {
+                      method: 'POST',
+                      cache: 'no-cache',
+                      credentials: 'same-origin',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      redirect: 'follow',
+                    })
+
+    }
     const ruleList = document.getElementById("rule-list");
     const refreshRules = function () {
 
@@ -184,7 +221,8 @@ class MediamurMedia {
                                 }
 
                                 const text = document.createElement("span")
-                                text.textContent  = rule['tag'];
+                                text.className= "rule"
+                                text.textContent  = ` ${rule['tag']} : ${rule['value']}`;
 
                                 ruleElement.append(deleteButton)
                                 ruleElement.append(text)
@@ -231,7 +269,6 @@ class MediamurMedia {
         evtSource.addEventListener(type, (event) => {
 
             const data = JSON.parse(event.data);
-
             wall.offer_media(data);
         });
 

@@ -10,7 +10,7 @@ var MediaWall = /** @class */ (function () {
     MediaWall.prototype.offer_media = function (data) {
         var media = this.medias[data['id']];
         if (media === undefined) {
-            media = new MediamurMedia(data['id'], data['kind'], data['preview_url'], data['url']);
+            media = new MediamurMedia(data['id'], data['kind'], data['preview_url'], data['url'], data['hit']);
             var player_1 = this.player;
             media.node.onclick = function (e) {
                 player_1.innerHTML = "";
@@ -25,32 +25,43 @@ var MediaWall = /** @class */ (function () {
                     video.muted = true;
                     video.autoplay = true;
                     video.controls = true;
+                    video.height = 320;
                     var source = document.createElement("source");
                     source.src = media.url;
                     source.type = "video/mp4";
                     video.append(source);
                     player_1.append(video);
                 }
+                fetch("tweet/".concat(media.id))
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                    var tweetsHtml = document.createElement("ul");
+                    for (var idx in data) {
+                        var tweet = data[idx];
+                        var text = tweet[0];
+                        var users = tweet[1];
+                        var nb_users = users.length;
+                        var tweetUser = {};
+                        var tweetHtml = document.createElement("li");
+                        tweetHtml.textContent = "".concat(nb_users, " : ").concat(text);
+                        tweetsHtml.append(tweetHtml);
+                    }
+                    player_1.append(tweetsHtml);
+                });
             };
             this.medias[data["id"]] = media;
         }
-        var old_count = this.counts[media.id];
-        var new_count = 1;
-        if (old_count === undefined) {
-            new_count = 1;
-        }
         else {
-            new_count = old_count + 1;
+            var old_stack = this.stacks[media.hit];
+            if (old_stack !== undefined) {
+                old_stack.remove_media(media);
+            }
+            media.hit = data['hit'];
         }
-        this.counts[media.id] = new_count;
-        var old_stack = this.stacks[old_count];
-        var new_stack = this.stacks[new_count];
+        var new_stack = this.stacks[media.hit];
         if (new_stack === undefined) {
-            this.stacks[new_count] = new WallStack(new_count, this.node);
-            new_stack = this.stacks[new_count];
-        }
-        if (old_stack !== undefined) {
-            old_stack.remove_media(media);
+            this.stacks[media.hit] = new WallStack(media.hit, this.node);
+            new_stack = this.stacks[media.hit];
         }
         new_stack.offer_media(media);
     };
@@ -61,6 +72,7 @@ var WallStack = /** @class */ (function () {
         this.id = id;
         this.list = {};
         this.root = document.createElement('div');
+        this.root.id = "wall-stack-".concat(this.id);
         this.root.className = this.className();
         var label_div = document.createElement("div");
         label_div.className = "pure-u-1-24 wall-stack-count";
@@ -69,7 +81,15 @@ var WallStack = /** @class */ (function () {
         this.node = document.createElement("div");
         this.node.className = "pure-u-23-24 wall-stack-media";
         this.root.append(this.node);
-        parent.insertBefore(this.root, parent.firstChild);
+        var stackUnder = null;
+        for (var i = (id - 1); i > 0; i--) {
+            var t = document.getElementById("wall-stack-".concat(i));
+            if (t !== null) {
+                stackUnder = t;
+                break;
+            }
+        }
+        parent.insertBefore(this.root, stackUnder);
     }
     WallStack.prototype.element_id = function () {
         return "wall-stack-".concat(this.id);
@@ -80,7 +100,7 @@ var WallStack = /** @class */ (function () {
     ;
     WallStack.prototype.remove_media = function (media) {
         delete this.list[media.id];
-        this.node.removeChild(media.node);
+        //this.node.removeChild(media.node);
         if (Object.keys(this.list).length <= 0) {
             this.root.className = "invisible";
         }
@@ -95,24 +115,39 @@ var WallStack = /** @class */ (function () {
     return WallStack;
 }());
 var MediamurMedia = /** @class */ (function () {
-    function MediamurMedia(id, kind, preview_url, url) {
+    function MediamurMedia(id, kind, preview_url, url, hit) {
         this.id = id;
         this.kind = kind,
             this.preview_url = preview_url;
         this.url = url;
+        this.hit = hit;
         this.node = document.createElement("img");
         this.node.className = this.kind;
+        this.node.id = "media_".concat(id);
         this.node.src = this.preview_url;
     }
     ;
     MediamurMedia.from = function (json_str) {
         var json_data = JSON.parse(json_str);
-        return new MediamurMedia(json_data['id'], json_data['kind'], json_data['preview_url'], json_data['url']);
+        return new MediamurMedia(json_data['id'], json_data['kind'], json_data['preview_url'], json_data['url'], json_data['hit']);
     };
     ;
     return MediamurMedia;
 }());
 (function () {
+    var streamStartStopToggle = document.getElementById("streamStartStopToggle");
+    streamStartStopToggle.onchange = function () {
+        var url = streamStartStopToggle.checked ? "/stream/start" : "/stream/stop";
+        fetch(url, {
+            method: 'POST',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            redirect: 'follow'
+        });
+    };
     var ruleList = document.getElementById("rule-list");
     var refreshRules = function () {
         fetch('/rules')
@@ -145,7 +180,8 @@ var MediamurMedia = /** @class */ (function () {
                     });
                 };
                 var text = document.createElement("span");
-                text.textContent = rule['tag'];
+                text.className = "rule";
+                text.textContent = " ".concat(rule['tag'], " : ").concat(rule['value']);
                 ruleElement.append(deleteButton);
                 ruleElement.append(text);
                 ruleList.append(ruleElement);

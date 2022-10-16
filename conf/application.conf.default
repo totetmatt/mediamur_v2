@@ -1,0 +1,22 @@
+akka {
+  http {
+    server {
+      host = "localhost"
+      port = 48099
+    }
+    client {
+      parsing {
+        max-content-length = 83886080
+      }
+    }
+  }
+  # loglevel = "DEBUG"
+}
+mediamur {
+  # Twitter App info, if you don't have go to https://developer.twitter.com/en/apps and create an app.
+
+  twitter {
+    bearer_key = ""
+  }
+
+}
