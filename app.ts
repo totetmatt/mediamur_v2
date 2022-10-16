@@ -55,7 +55,7 @@ class MediaWall {
                               let tweetUser = {};
 
                               const tweetHtml =  document.createElement("li");
-                              tweetHtml.textContent = `${nb_users} : ${text}`;
+                              tweetHtml.append(document.createTextNode(`${nb_users} : ${text}`));
                               tweetsHtml.append(tweetHtml);
                             }
                             player.append(tweetsHtml);
@@ -222,7 +222,7 @@ class MediamurMedia {
 
                                 const text = document.createElement("span")
                                 text.className= "rule"
-                                text.textContent  = ` ${rule['tag']} : ${rule['value']}`;
+                                text.append(document.createTextNode(` ${rule['tag']} : ${rule['value']}`));
 
                                 ruleElement.append(deleteButton)
                                 ruleElement.append(text)

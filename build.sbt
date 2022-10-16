@@ -1,5 +1,5 @@
 import NativePackagerHelper._
-ThisBuild / version := "2.0.0"
+ThisBuild / version := "2.0.1"
 ThisBuild / scalaVersion := "2.13.9"
 
 enablePlugins(JavaServerAppPackaging)

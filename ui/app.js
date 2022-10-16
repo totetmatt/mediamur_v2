@@ -43,7 +43,7 @@ var MediaWall = /** @class */ (function () {
                         var nb_users = users.length;
                         var tweetUser = {};
                         var tweetHtml = document.createElement("li");
-                        tweetHtml.textContent = "".concat(nb_users, " : ").concat(text);
+                        tweetHtml.append(document.createTextNode("".concat(nb_users, " : ").concat(text)));
                         tweetsHtml.append(tweetHtml);
                     }
                     player_1.append(tweetsHtml);
@@ -181,7 +181,7 @@ var MediamurMedia = /** @class */ (function () {
                 };
                 var text = document.createElement("span");
                 text.className = "rule";
-                text.textContent = " ".concat(rule['tag'], " : ").concat(rule['value']);
+                text.append(document.createTextNode(" ".concat(rule['tag'], " : ").concat(rule['value'])));
                 ruleElement.append(deleteButton);
                 ruleElement.append(text);
                 ruleList.append(ruleElement);
