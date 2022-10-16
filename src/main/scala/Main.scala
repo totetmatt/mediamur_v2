@@ -21,8 +21,9 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val rulesEntityFormat = jsonFormat3(Rules)
   implicit val mediamurEntityFormat = jsonFormat5(MediamurEntity)
   implicit val userEntityFormat = jsonFormat2(User)
+  implicit val startFormat = jsonFormat1(Start)
 }
-
+case class Start(isSample:Boolean)
 case class Rules(
                   id: String,
                   tag: String,
@@ -44,12 +45,12 @@ object Main extends JsonSupport {
     val settings = Settings(system)
 
     val stream = new TwitterStream()
-    stream.start()
+    stream.start(false)
     stream.tweetQueueSource.runWith(Sink.ignore)
     val route =
       path("rules") {
         get {
-          complete(HttpEntity(ContentTypes.`application/json`, stream.getRules()))
+          complete(HttpEntity(ContentTypes.`application/json`, stream.getRules))
         } ~ post {
           entity(as[Rules]) { rules =>
             if (rules.tag.nonEmpty && rules.value.nonEmpty) {
@@ -99,8 +100,10 @@ object Main extends JsonSupport {
           }
         } ~ path("start") {
           post {
-            stream.start()
-            complete(HttpEntity.Empty)
+            entity(as[Start]) { start =>
+              stream.start(start.isSample)
+              complete(HttpEntity.Empty)
+            }
           }
         }
       } ~ pathPrefix("") {

@@ -136,8 +136,10 @@ var MediamurMedia = /** @class */ (function () {
 }());
 (function () {
     var streamStartStopToggle = document.getElementById("streamStartStopToggle");
+    var isSample = document.getElementById("isSample");
     streamStartStopToggle.onchange = function () {
         var url = streamStartStopToggle.checked ? "/stream/start" : "/stream/stop";
+        var checked = isSample.checked;
         fetch(url, {
             method: 'POST',
             cache: 'no-cache',
@@ -145,7 +147,8 @@ var MediamurMedia = /** @class */ (function () {
             headers: {
                 'Content-Type': 'application/json'
             },
-            redirect: 'follow'
+            redirect: 'follow',
+            body: JSON.stringify({ "isSample": checked })
         });
     };
     var ruleList = document.getElementById("rule-list");

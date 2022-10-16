@@ -8,7 +8,7 @@ import com.twitter.clientlib.api.TwitterApi
 import com.twitter.clientlib.model.{AddOrDeleteRulesRequest, AddRulesRequest, AnimatedGif, DeleteRulesRequest, DeleteRulesRequestDelete, Photo, RuleNoId, StreamingTweetResponse, Video}
 import akka.actor.ActorSystem
 import akka.stream.scaladsl._
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import java.io.{BufferedReader, InputStreamReader, InterruptedIOException}
 import java.util
@@ -22,7 +22,7 @@ case class MediamurEntity(
                          hit:Int
                          )
 class TwitterStream {
-  val logger = LoggerFactory.getLogger(this.getClass.toString)
+  val logger: Logger = LoggerFactory.getLogger(this.getClass.toString)
   implicit val system: ActorSystem = ActorSystem("reactive-tweets")
   var config: MediamurConfig = Settings(system)
   // ""
@@ -34,8 +34,8 @@ class TwitterStream {
   val tweetdb : collection.mutable.HashMap[String,StreamingTweetResponse] = collection.mutable.HashMap.empty
   val mediaidToTweetid : collection.mutable.HashMap[String,Set[String]] = collection.mutable.HashMap.empty
 
-  def getRules() = apiInstance.tweets().getRules.execute().toJson
-  def addRule(tag:String, value:String) = {
+  def getRules: String = apiInstance.tweets().getRules.execute().toJson
+  def addRule(tag:String, value:String): String = {
     val rule = new RuleNoId();
     rule.setTag(tag)
     rule.setValue(value)
@@ -44,7 +44,7 @@ class TwitterStream {
     val req = new AddOrDeleteRulesRequest(add);
     apiInstance.tweets().addOrDeleteRules(req).execute().toJson
   }
-  def deleteRule(id:String) = {
+  def deleteRule(id:String): String = {
     val deleteItems = new DeleteRulesRequestDelete()
     deleteItems.addIdsItem(id)
     val delete  = new DeleteRulesRequest();
@@ -76,23 +76,33 @@ class TwitterStream {
     }
   }
   def stop(): Unit ={
-    running=false
+    running = false
     streamThread.interrupt()
   }
-  def start(): Unit = {
+  def start(isSample:Boolean): Unit = {
     if(!running) {
       running=true
       streamThread = new Thread {
-        override def run() {
-          val inputStream = apiInstance
-            .tweets()
-            .searchStream()
-            //.sampleStream()
-            .expansions(util.Set.of("attachments.media_keys","author_id","entities.mentions.username"))
-            .userFields(util.Set.of("name","username","id"))
-            .tweetFields(util.Set.of("attachments", "entities","text","id"))
-            .mediaFields(util.Set.of("preview_image_url", "variants", "url", "duration_ms", "height", "width", "media_key", "type"))
-            .execute()
+        override def run(): Unit = {
+          val inputStream = if(isSample) {
+            apiInstance
+              .tweets()
+              .sampleStream()
+              .expansions(util.Set.of("attachments.media_keys", "author_id", "entities.mentions.username"))
+              .userFields(util.Set.of("name", "username", "id"))
+              .tweetFields(util.Set.of("attachments", "entities", "text", "id"))
+              .mediaFields(util.Set.of("preview_image_url", "variants", "url", "duration_ms", "height", "width", "media_key", "type"))
+              .execute()
+          } else {
+            apiInstance
+              .tweets()
+              .searchStream()
+              .expansions(util.Set.of("attachments.media_keys", "author_id", "entities.mentions.username"))
+              .userFields(util.Set.of("name", "username", "id"))
+              .tweetFields(util.Set.of("attachments", "entities", "text", "id"))
+              .mediaFields(util.Set.of("preview_image_url", "variants", "url", "duration_ms", "height", "width", "media_key", "type"))
+              .execute()
+          }
           try {
             val reader = new BufferedReader(new InputStreamReader(inputStream))
             try while (running) {
@@ -109,9 +119,7 @@ class TwitterStream {
               } catch {
                 case e: NullPointerException => logger.warn(e.getMessage)
                 case e:IllegalArgumentException => logger.warn(e.getMessage)
-
               }
-
             }
             catch {
               case e: InterruptedIOException => logger.warn(e.getMessage)

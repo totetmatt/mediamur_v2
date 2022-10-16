@@ -172,9 +172,11 @@ class MediamurMedia {
 
 (function() {
     const streamStartStopToggle = document.getElementById("streamStartStopToggle") as HTMLInputElement
+    const isSample = document.getElementById("isSample") as HTMLInputElement
+
     streamStartStopToggle.onchange = function () {
      let url = streamStartStopToggle.checked ? "/stream/start":"/stream/stop";
-
+     let checked =  isSample.checked;
              fetch(url, {
                       method: 'POST',
                       cache: 'no-cache',
@@ -183,6 +185,7 @@ class MediamurMedia {
                         'Content-Type': 'application/json'
                       },
                       redirect: 'follow',
+                      body: JSON.stringify({"isSample":checked})
                     })
 
     }
