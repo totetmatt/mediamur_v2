@@ -28,5 +28,6 @@ Universal / mappings  += file("./conf/application.conf.default") -> "conf/applic
 Universal / mappings  += file("./sdk.properties") -> "sdk.properties"
 Universal / mappings ++= directory("ui")
 Universal / javaOptions ++= Seq(
-  "-Dconfig.file=conf/application.conf"
+  "-Dconfig.file=conf/application.conf",
+  "-Dfile.encoding=UTF-8"
 )
