@@ -20,7 +20,7 @@ Mediamur needs Java to run.
 
 ## Quickstart
 
-* Download here
+* Download [here](https://github.com/totetmatt/mediamur_v2/releases/download/untagged-897904d8ab778292ab3a/mediamur-2.0.1.zip)
 * Unzip somewhere in your disk
 * Edit the `conf/application.conf` and put your BEARER_TOKEN (you need a twitter developper account)
 *   ```yaml
